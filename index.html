@@ -3,177 +3,179 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>TrailTrip Demo v7 | 하귀 → 협재</title>
-  <link rel="stylesheet" href="./styles.css" />
+  <title>TrailTrip Demo V7</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- 설정 먼저 로드 -->
+  <script src="config.js"></script>
+
+  <!-- 카카오맵 SDK를 config.js의 키로 동적 로드 -->
+  <script>
+    (function loadKakaoMapSdk() {
+      const config = window.TRAILTRIP_CONFIG || {};
+      const kakaoKey = config.kakaoJavascriptKey;
+
+      if (!kakaoKey) {
+        console.error('카카오 JavaScript 키가 비어 있습니다. config.js를 확인하세요.');
+        return;
+      }
+
+      const existing = document.querySelector('script[data-kakao-sdk="true"]');
+      if (existing) return;
+
+      const script = document.createElement('script');
+      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoKey}&autoload=false`;
+      script.async = true;
+      script.dataset.kakaoSdk = 'true';
+
+      script.onload = function () {
+        console.log('Kakao Maps SDK loaded');
+      };
+
+      script.onerror = function () {
+        console.error('Kakao Maps SDK 로드 실패');
+      };
+
+      document.head.appendChild(script);
+    })();
+  </script>
 </head>
 <body>
-  <div class="mobile-app">
-    <header class="mobile-topbar">
-      <div>
-        <p class="eyebrow">TrailTrip Demo v7</p>
-        <h1>하귀 → 협재</h1>
-        <p class="subcopy">카카오맵 기반 현장 답사 데모</p>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-wrap">
+        <div class="brand">TRAILTRIP DEMO V7</div>
+        <h1 class="title">하귀 → 협재</h1>
+        <p class="subtitle">카카오맵 기반 현장 답사 데모</p>
       </div>
-      <div class="status-stack">
-        <span id="gpsStatus" class="badge">대기 중</span>
-        <span id="saveStatusBadge" class="badge badge-soft">로컬 자동저장</span>
+
+      <div class="status-wrap">
+        <div class="status-pill" id="gpsStatus">대기 중</div>
+        <div class="status-sub" id="saveStatus">로컬 자동저장</div>
       </div>
     </header>
 
-    <main class="tab-stage">
-      <section class="tab-panel is-active" data-panel="map">
-        <section class="map-card">
-          <div class="map-header compact-gap">
-            <div>
-              <strong>현장 지도</strong>
-              <p id="plannedDistance" class="muted">약 15.0 km</p>
-            </div>
-            <span id="routeSourceBadge" class="badge badge-soft">기본 데모 경로</span>
+    <main class="main-content">
+      <section class="map-card">
+        <div class="map-card-head">
+          <div>
+            <h2 class="section-title">현장 지도</h2>
+            <p class="section-sub">약 15.0 km</p>
           </div>
+          <button id="resetRouteBtn" class="chip-btn" type="button">기본 데모 경로</button>
+        </div>
 
-          <div id="mapNotice" class="map-notice hidden"></div>
-
-          <div class="map-shell">
-            <div id="map"></div>
-
-            <div class="top-stat-ribbon">
-              <article><span>거리</span><strong id="distanceValue">0.00 km</strong></article>
-              <article><span>시간</span><strong id="timeValue">00:00:00</strong></article>
-              <article><span>속도</span><strong id="speedValue">0.0 km/h</strong></article>
-              <article><span>진행률</span><strong id="progressValue">0%</strong></article>
-            </div>
-
-            <div class="map-fab-stack">
-              <button id="centerMapBtn" class="fab-btn" type="button" title="내 위치로 이동">◎</button>
-              <button id="useCurrentLocationBtn" class="fab-btn" type="button" title="현재 위치를 포인트 좌표에 입력">＋</button>
-            </div>
-
-            <div class="bottom-action-dock">
-              <button id="startBtn" class="primary-btn dock-primary">로그 시작</button>
-              <button id="quickPhotoTabBtn" class="secondary-btn dock-btn" type="button">기록</button>
-              <button id="quickSpotTabBtn" class="secondary-btn dock-btn" type="button">포인트</button>
-            </div>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <span class="stat-label">거리</span>
+            <strong class="stat-value" id="distanceValue">0.00 km</strong>
           </div>
+          <div class="stat-box">
+            <span class="stat-label">시간</span>
+            <strong class="stat-value" id="timeValue">00:00:00</strong>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">속도</span>
+            <strong class="stat-value" id="speedValue">0.0 km/h</strong>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">진행률</span>
+            <strong class="stat-value" id="progressValue">0%</strong>
+          </div>
+        </div>
 
-          <div class="mini-actions mini-actions-three">
-            <button id="syncNowBtn" class="secondary-btn" type="button">서버 동기화</button>
-            <button id="exportGpxBtn" class="secondary-btn" type="button">내 로그 GPX</button>
-            <button id="downloadLogBtn" class="secondary-btn" type="button">JSON 저장</button>
+        <div class="map-wrap">
+          <div id="map" class="map"></div>
+
+          <div class="map-floating-controls">
+            <button id="locateBtn" class="fab-btn" type="button" title="현재 위치로 이동">◎</button>
+            <button id="zoomInBtn" class="fab-btn" type="button" title="확대">+</button>
+            <button id="zoomOutBtn" class="fab-btn" type="button" title="축소">−</button>
           </div>
-          <div class="mini-actions mini-actions-two">
-            <button id="newSessionBtn" class="secondary-btn" type="button">새 기록</button>
-            <button id="resetRouteBtn" class="secondary-btn" type="button">기본 경로 복원</button>
-          </div>
-          <p class="hint">지금 버전은 카카오맵 + 자동저장 + GPX 업로드 + 포인트 기록용 최종 데모 버전입니다.</p>
-        </section>
+        </div>
+
+        <div class="primary-actions">
+          <button id="startBtn" class="primary-btn" type="button">로그 시작</button>
+          <button id="recordTabBtn" class="secondary-btn" type="button">기록</button>
+          <button id="pointTabBtn" class="secondary-btn" type="button">포인트</button>
+        </div>
+
+        <div class="secondary-actions">
+          <button id="syncBtn" class="ghost-btn" type="button">서버 동기화</button>
+          <button id="gpxBtn" class="ghost-btn" type="button">내 로그 GPX</button>
+          <button id="jsonBtn" class="ghost-btn" type="button">JSON 저장</button>
+        </div>
+
+        <div class="tertiary-actions">
+          <button id="newSessionBtn" class="ghost-btn wide" type="button">새 기록</button>
+          <button id="restoreDemoBtn" class="ghost-btn wide" type="button">기본 경로 복원</button>
+        </div>
       </section>
 
-      <section class="tab-panel" data-panel="record">
-        <section class="sheet-card compact-card">
-          <div class="section-head compact-head">
-            <h2>포인트 기록</h2>
-            <span id="spotCountBadge" class="badge badge-soft">0개</span>
-          </div>
+      <section id="recordPanel" class="sheet hidden">
+        <div class="sheet-head">
+          <h3>기록</h3>
+          <button id="closeRecordPanelBtn" class="text-btn" type="button">닫기</button>
+        </div>
 
-          <div class="quick-capture-row">
-            <label class="field-block">
-              <span>구분</span>
-              <select id="spotCategory">
-                <option value="자연경관">자연경관</option>
-                <option value="식당">식당</option>
-                <option value="카페">카페</option>
-                <option value="편의점">편의점</option>
-                <option value="화장실">화장실</option>
-                <option value="주차/교통">주차/교통</option>
-                <option value="위험구간">위험구간</option>
-                <option value="기타">기타</option>
-              </select>
-            </label>
-            <label class="field-block grow">
-              <span>이름</span>
-              <input id="spotTitle" type="text" placeholder="예: 곽지 바다뷰 포인트" />
-            </label>
-          </div>
+        <div class="form-group">
+          <label for="pointType">유형</label>
+          <select id="pointType">
+            <option value="scenery">자연경관</option>
+            <option value="restaurant">식당</option>
+            <option value="cafe">카페</option>
+            <option value="store">편의점</option>
+            <option value="toilet">화장실</option>
+            <option value="traffic">주차/교통</option>
+            <option value="etc">기타</option>
+          </select>
+        </div>
 
-          <label class="field-block">
-            <span>기록 내용</span>
-            <textarea id="spotDescription" rows="4" placeholder="뷰 좋음 / 붐빔 / 화장실 상태 / 다시 오고 싶음 / 위험 요소 등"></textarea>
-          </label>
+        <div class="form-group">
+          <label for="pointTitle">이름</label>
+          <input id="pointTitle" type="text" placeholder="예: 곽지 해변 포토스팟" />
+        </div>
 
-          <div class="photo-location-box">
-            <label class="field-block">
-              <span>사진</span>
-              <input id="spotPhotoInput" type="file" accept="image/*" capture="environment" />
-            </label>
-            <div class="location-box sticky-box">
-              <span class="location-label">기록 좌표</span>
-              <p id="spotCoordsPreview" class="coords-preview">아직 현재 위치가 없습니다.</p>
-            </div>
-          </div>
+        <div class="form-group">
+          <label for="pointMemo">메모</label>
+          <textarea id="pointMemo" rows="4" placeholder="느낌, 편의시설 정보, 유의점 등을 적어보세요"></textarea>
+        </div>
 
-          <div id="spotPhotoPreview" class="spot-photo-preview empty">선택한 사진 미리보기가 여기에 표시됩니다.</div>
-          <button id="addSpotBtn" class="primary-btn block-btn" type="button">포인트 저장</button>
-        </section>
+        <div class="form-group">
+          <label for="photoInput">사진</label>
+          <input id="photoInput" type="file" accept="image/*" capture="environment" />
+        </div>
 
-        <section class="sheet-card compact-card details-card">
-          <div class="section-head compact-head">
-            <h3>현장 메모</h3>
-          </div>
-          <textarea id="fieldNotes" rows="6" placeholder="예: 곽지 구간 바람 강함 / 금능~협재 구간 만족도 높음 / 편의시설 접근성 좋음"></textarea>
-        </section>
+        <div class="record-actions">
+          <button id="fillCurrentLocationBtn" class="secondary-btn" type="button">현재 위치 넣기</button>
+          <button id="savePointBtn" class="primary-btn" type="button">포인트 저장</button>
+        </div>
       </section>
 
-      <section class="tab-panel" data-panel="spots">
-        <section class="sheet-card compact-card details-card">
-          <div class="section-head compact-head">
-            <h2>저장된 포인트</h2>
-            <button id="scrollToMapBtn" class="secondary-btn small-btn" type="button">지도에서 보기</button>
-          </div>
-          <div id="spotRecordList" class="spot-record-list empty-list">아직 기록된 포인트가 없습니다.</div>
-        </section>
+      <section id="pointPanel" class="sheet hidden">
+        <div class="sheet-head">
+          <h3>포인트</h3>
+          <button id="closePointPanelBtn" class="text-btn" type="button">닫기</button>
+        </div>
 
-        <details class="sheet-card compact-card details-card">
-          <summary>GPX 업로드 / 경로 교체</summary>
-          <div class="details-body">
-            <div class="upload-row">
-              <input id="gpxFileInput" type="file" accept=".gpx,application/gpx+xml,application/xml,text/xml" />
-            </div>
-            <p class="hint">트레킹앱 GPX를 올리면 기본 경로 대신 실제 걸은 길로 테스트할 수 있습니다.</p>
-          </div>
-        </details>
-
-        <details class="sheet-card compact-card details-card">
-          <summary>체크포인트 보기</summary>
-          <div class="details-body">
-            <div id="checkpointList" class="checkpoint-list"></div>
-          </div>
-        </details>
-
-        <details class="sheet-card compact-card details-card">
-          <summary>서버 연결 안내</summary>
-          <div class="details-body">
-            <p class="hint no-margin">Vercel 정적 사이트는 파일을 영구 저장하지 못합니다. 그래서 이 버전은 <strong>로컬 자동저장</strong>과 <strong>Supabase 서버 동기화</strong>를 같이 준비해뒀습니다.</p>
-            <ol class="setup-list">
-              <li>Supabase 프로젝트 생성</li>
-              <li><code>supabase_setup.sql</code> 실행</li>
-              <li><code>config.js</code>에 URL, anon key, 카카오 JavaScript 키 입력</li>
-              <li>재배포 후 <strong>서버 동기화</strong> 버튼 사용</li>
-            </ol>
-          </div>
-        </details>
+        <div id="pointList" class="point-list">
+          <div class="empty-text">아직 저장된 포인트가 없습니다.</div>
+        </div>
       </section>
     </main>
 
-    <nav class="bottom-tabbar" aria-label="하단 탭">
-      <button class="tab-btn is-active" data-tab="map" type="button"><span>🗺️</span><strong>지도</strong></button>
-      <button class="tab-btn" data-tab="record" type="button"><span>📸</span><strong>기록</strong></button>
-      <button class="tab-btn" data-tab="spots" type="button"><span>📍</span><strong>포인트</strong></button>
+    <nav class="bottom-tab">
+      <button id="tabMapBtn" class="tab-btn active" type="button">🗺️<span>지도</span></button>
+      <button id="tabRecordBtn" class="tab-btn" type="button">📝<span>기록</span></button>
+      <button id="tabPointBtn" class="tab-btn" type="button">📍<span>포인트</span></button>
     </nav>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./config.js"></script>
-  <script src="./route-data.js"></script>
-  <script src="./app.js"></script>
+  <!-- app.js는 가장 마지막 -->
+  <script src="route-data.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
