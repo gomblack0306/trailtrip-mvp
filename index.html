@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>TrailTrip Demo v7 | 하귀 → 협재</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="mobile-app">
+    <header class="mobile-topbar">
+      <div>
+        <p class="eyebrow">TrailTrip Demo v7</p>
+        <h1>하귀 → 협재</h1>
+        <p class="subcopy">카카오맵 기반 현장 답사 데모</p>
+      </div>
+      <div class="status-stack">
+        <span id="gpsStatus" class="badge">대기 중</span>
+        <span id="saveStatusBadge" class="badge badge-soft">로컬 자동저장</span>
+      </div>
+    </header>
+
+    <main class="tab-stage">
+      <section class="tab-panel is-active" data-panel="map">
+        <section class="map-card">
+          <div class="map-header compact-gap">
+            <div>
+              <strong>현장 지도</strong>
+              <p id="plannedDistance" class="muted">약 15.0 km</p>
+            </div>
+            <span id="routeSourceBadge" class="badge badge-soft">기본 데모 경로</span>
+          </div>
+
+          <div id="mapNotice" class="map-notice hidden"></div>
+
+          <div class="map-shell">
+            <div id="map"></div>
+
+            <div class="top-stat-ribbon">
+              <article><span>거리</span><strong id="distanceValue">0.00 km</strong></article>
+              <article><span>시간</span><strong id="timeValue">00:00:00</strong></article>
+              <article><span>속도</span><strong id="speedValue">0.0 km/h</strong></article>
+              <article><span>진행률</span><strong id="progressValue">0%</strong></article>
+            </div>
+
+            <div class="map-fab-stack">
+              <button id="centerMapBtn" class="fab-btn" type="button" title="내 위치로 이동">◎</button>
+              <button id="useCurrentLocationBtn" class="fab-btn" type="button" title="현재 위치를 포인트 좌표에 입력">＋</button>
+            </div>
+
+            <div class="bottom-action-dock">
+              <button id="startBtn" class="primary-btn dock-primary">로그 시작</button>
+              <button id="quickPhotoTabBtn" class="secondary-btn dock-btn" type="button">기록</button>
+              <button id="quickSpotTabBtn" class="secondary-btn dock-btn" type="button">포인트</button>
+            </div>
+          </div>
+
+          <div class="mini-actions mini-actions-three">
+            <button id="syncNowBtn" class="secondary-btn" type="button">서버 동기화</button>
+            <button id="exportGpxBtn" class="secondary-btn" type="button">내 로그 GPX</button>
+            <button id="downloadLogBtn" class="secondary-btn" type="button">JSON 저장</button>
+          </div>
+          <div class="mini-actions mini-actions-two">
+            <button id="newSessionBtn" class="secondary-btn" type="button">새 기록</button>
+            <button id="resetRouteBtn" class="secondary-btn" type="button">기본 경로 복원</button>
+          </div>
+          <p class="hint">지금 버전은 카카오맵 + 자동저장 + GPX 업로드 + 포인트 기록용 최종 데모 버전입니다.</p>
+        </section>
+      </section>
+
+      <section class="tab-panel" data-panel="record">
+        <section class="sheet-card compact-card">
+          <div class="section-head compact-head">
+            <h2>포인트 기록</h2>
+            <span id="spotCountBadge" class="badge badge-soft">0개</span>
+          </div>
+
+          <div class="quick-capture-row">
+            <label class="field-block">
+              <span>구분</span>
+              <select id="spotCategory">
+                <option value="자연경관">자연경관</option>
+                <option value="식당">식당</option>
+                <option value="카페">카페</option>
+                <option value="편의점">편의점</option>
+                <option value="화장실">화장실</option>
+                <option value="주차/교통">주차/교통</option>
+                <option value="위험구간">위험구간</option>
+                <option value="기타">기타</option>
+              </select>
+            </label>
+            <label class="field-block grow">
+              <span>이름</span>
+              <input id="spotTitle" type="text" placeholder="예: 곽지 바다뷰 포인트" />
+            </label>
+          </div>
+
+          <label class="field-block">
+            <span>기록 내용</span>
+            <textarea id="spotDescription" rows="4" placeholder="뷰 좋음 / 붐빔 / 화장실 상태 / 다시 오고 싶음 / 위험 요소 등"></textarea>
+          </label>
+
+          <div class="photo-location-box">
+            <label class="field-block">
+              <span>사진</span>
+              <input id="spotPhotoInput" type="file" accept="image/*" capture="environment" />
+            </label>
+            <div class="location-box sticky-box">
+              <span class="location-label">기록 좌표</span>
+              <p id="spotCoordsPreview" class="coords-preview">아직 현재 위치가 없습니다.</p>
+            </div>
+          </div>
+
+          <div id="spotPhotoPreview" class="spot-photo-preview empty">선택한 사진 미리보기가 여기에 표시됩니다.</div>
+          <button id="addSpotBtn" class="primary-btn block-btn" type="button">포인트 저장</button>
+        </section>
+
+        <section class="sheet-card compact-card details-card">
+          <div class="section-head compact-head">
+            <h3>현장 메모</h3>
+          </div>
+          <textarea id="fieldNotes" rows="6" placeholder="예: 곽지 구간 바람 강함 / 금능~협재 구간 만족도 높음 / 편의시설 접근성 좋음"></textarea>
+        </section>
+      </section>
+
+      <section class="tab-panel" data-panel="spots">
+        <section class="sheet-card compact-card details-card">
+          <div class="section-head compact-head">
+            <h2>저장된 포인트</h2>
+            <button id="scrollToMapBtn" class="secondary-btn small-btn" type="button">지도에서 보기</button>
+          </div>
+          <div id="spotRecordList" class="spot-record-list empty-list">아직 기록된 포인트가 없습니다.</div>
+        </section>
+
+        <details class="sheet-card compact-card details-card">
+          <summary>GPX 업로드 / 경로 교체</summary>
+          <div class="details-body">
+            <div class="upload-row">
+              <input id="gpxFileInput" type="file" accept=".gpx,application/gpx+xml,application/xml,text/xml" />
+            </div>
+            <p class="hint">트레킹앱 GPX를 올리면 기본 경로 대신 실제 걸은 길로 테스트할 수 있습니다.</p>
+          </div>
+        </details>
+
+        <details class="sheet-card compact-card details-card">
+          <summary>체크포인트 보기</summary>
+          <div class="details-body">
+            <div id="checkpointList" class="checkpoint-list"></div>
+          </div>
+        </details>
+
+        <details class="sheet-card compact-card details-card">
+          <summary>서버 연결 안내</summary>
+          <div class="details-body">
+            <p class="hint no-margin">Vercel 정적 사이트는 파일을 영구 저장하지 못합니다. 그래서 이 버전은 <strong>로컬 자동저장</strong>과 <strong>Supabase 서버 동기화</strong>를 같이 준비해뒀습니다.</p>
+            <ol class="setup-list">
+              <li>Supabase 프로젝트 생성</li>
+              <li><code>supabase_setup.sql</code> 실행</li>
+              <li><code>config.js</code>에 URL, anon key, 카카오 JavaScript 키 입력</li>
+              <li>재배포 후 <strong>서버 동기화</strong> 버튼 사용</li>
+            </ol>
+          </div>
+        </details>
+      </section>
+    </main>
+
+    <nav class="bottom-tabbar" aria-label="하단 탭">
+      <button class="tab-btn is-active" data-tab="map" type="button"><span>🗺️</span><strong>지도</strong></button>
+      <button class="tab-btn" data-tab="record" type="button"><span>📸</span><strong>기록</strong></button>
+      <button class="tab-btn" data-tab="spots" type="button"><span>📍</span><strong>포인트</strong></button>
+    </nav>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js"></script>
+  <script src="./route-data.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
