@@ -68,8 +68,6 @@ const syncNowBtn = document.getElementById('syncNowBtn');
 const newSessionBtn = document.getElementById('newSessionBtn');
 const centerMapBtn = document.getElementById('centerMapBtn');
 const mapNotice = document.getElementById('mapNotice');
-const quickPhotoTabBtn = document.getElementById('quickPhotoTabBtn');
-const quickSpotTabBtn = document.getElementById('quickSpotTabBtn');
 
 const tabButtons = [...document.querySelectorAll('.tab-btn')];
 const tabPanels = [...document.querySelectorAll('.tab-panel')];
@@ -79,9 +77,7 @@ function switchTab(tabName) {
   tabPanels.forEach((panel) => panel.classList.toggle('is-active', panel.dataset.panel === tabName));
 }
 
-tabButtons.forEach((btn) => {
-  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-});
+tabButtons.forEach((btn) => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
 
 function setSaveStatus(text, tone = 'soft') {
   saveStatusBadge.textContent = text;
@@ -115,8 +111,7 @@ function haversineMeters(lat1, lon1, lat2, lon2) {
   const toRad = (d) => d * Math.PI / 180;
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
-  const a = Math.sin(dLat / 2) ** 2
-    + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
   return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
@@ -217,7 +212,6 @@ function ensureBoundsFromRoute() {
 function drawRoutePolyline() {
   if (!map) return;
   if (routePolyline) routePolyline.setMap(null);
-
   const pathLatLng = activeRoute.polyline.map(([lat, lng]) => latLng(lat, lng));
   routePolyline = new kakao.maps.Polyline({
     path: pathLatLng,
@@ -227,15 +221,12 @@ function drawRoutePolyline() {
     strokeStyle: 'solid'
   });
   routePolyline.setMap(map);
-
   const bounds = ensureBoundsFromRoute();
   if (bounds) map.setBounds(bounds, 40, 40, 40, 40);
 }
 
 function openInfoWindow(marker, html) {
-  const info = new kakao.maps.InfoWindow({
-    content: `<div style="padding:10px 12px; max-width:220px; font-size:13px; line-height:1.45;">${html}</div>`
-  });
+  const info = new kakao.maps.InfoWindow({ content: `<div style="padding:10px 12px; max-width:220px; font-size:13px; line-height:1.45;">${html}</div>` });
   infoWindows.push(info);
   kakao.maps.event.addListener(marker, 'click', () => {
     infoWindows.forEach((iw) => iw.close());
@@ -245,12 +236,11 @@ function openInfoWindow(marker, html) {
 
 function renderCheckpoints(route) {
   checkpointList.innerHTML = '';
-
   queueMapOp(() => {
     checkpointMarkers.forEach((marker) => marker.setMap(null));
     checkpointMarkers = [];
 
-    route.checkpoints.forEach((checkpoint) => {
+    route.checkpoints.forEach((checkpoint, index) => {
       const card = document.createElement('article');
       card.className = 'checkpoint-item';
       card.innerHTML = `
@@ -266,12 +256,7 @@ function renderCheckpoints(route) {
         clickable: true
       });
       marker.setMap(map);
-
-      openInfoWindow(
-        marker,
-        `<strong>${escapeHtml(checkpoint.name)}</strong><br>${checkpoint.km}km<br>${escapeHtml(checkpoint.prompt || '')}`
-      );
-
+      openInfoWindow(marker, `<strong>${escapeHtml(checkpoint.name)}</strong><br>${checkpoint.km}km<br>${escapeHtml(checkpoint.prompt || '')}`);
       checkpointMarkers.push(marker);
     });
   });
@@ -298,10 +283,7 @@ function smoothPanTo(point, force = false) {
 function updateCurrentMarker(point, accuracy = 0) {
   queueMapOp(() => {
     if (!currentLocationMarker) {
-      currentLocationMarker = new kakao.maps.Marker({
-        position: latLng(point.lat, point.lng),
-        title: '현재 위치'
-      });
+      currentLocationMarker = new kakao.maps.Marker({ position: latLng(point.lat, point.lng), title: '현재 위치', image: markerImage('current'), zIndex: 9 });
       currentLocationMarker.setMap(map);
     } else {
       currentLocationMarker.setPosition(latLng(point.lat, point.lng));
@@ -351,7 +333,6 @@ function renderSpotRecords() {
   });
 
   spotCountBadge.textContent = `${spotRecords.length}개`;
-
   if (spotRecords.length === 0) {
     spotRecordList.className = 'spot-record-list empty-list';
     spotRecordList.textContent = '아직 기록된 포인트가 없습니다.';
@@ -385,10 +366,7 @@ function renderSpotRecords() {
         clickable: true
       });
       marker.setMap(map);
-      openInfoWindow(
-        marker,
-        `<strong>${escapeHtml(record.title)}</strong><br>${escapeHtml(record.category)}<br>${escapeHtml(record.description || '')}`
-      );
+      openInfoWindow(marker, `<strong>${escapeHtml(record.title)}</strong><br>${escapeHtml(record.category)}<br>${escapeHtml(record.description || '')}`);
       spotMarkers.push(marker);
     });
   });
@@ -400,7 +378,6 @@ function restoreDraft() {
     setSaveStatus(supabaseClient ? '로컬 저장 중' : '로컬 자동저장', 'soft');
     return;
   }
-
   try {
     const saved = JSON.parse(raw);
     sessionId = saved.sessionId || sessionId;
@@ -411,14 +388,13 @@ function restoreDraft() {
     path = Array.isArray(saved.path) ? saved.path : [];
     spotRecords = Array.isArray(saved.spotRecords) ? saved.spotRecords : [];
     fieldNotes.value = saved.fieldNotes || '';
-
     if (saved.routeMeta && Array.isArray(saved.routePolyline) && saved.routePolyline.length >= 2) {
       activeRoute = {
         meta: saved.routeMeta,
         checkpoints: Array.isArray(saved.routeCheckpoints) ? saved.routeCheckpoints : defaultRoute.checkpoints,
         polyline: saved.routePolyline
       };
-      routeSourceLabel = saved.routeSourceLabel || '복원된 경로';
+      routeSourceBadge.textContent = saved.routeSourceLabel || '복원된 경로';
     }
 
     if (path.length > 0) {
@@ -435,9 +411,7 @@ function restoreDraft() {
     updateSelectedCoordsPreview();
     updateStats();
     updateTimer();
-
     if (startedAt && !endedAt) startBtn.textContent = '로그 재개';
-
     setSaveStatus('이전 기록 복원', 'ok');
   } catch (error) {
     console.error(error);
@@ -448,10 +422,8 @@ function restoreDraft() {
 function clearCurrentSession() {
   if (watchId) navigator.geolocation.clearWatch(watchId);
   watchId = null;
-
   if (timerId) clearInterval(timerId);
   timerId = null;
-
   isTracking = false;
   startedAt = null;
   endedAt = null;
@@ -490,7 +462,6 @@ async function syncToServer() {
     setSaveStatus('서버 미연결', 'warn');
     return false;
   }
-
   if (syncState.inFlight) {
     syncState.pending = true;
     return false;
@@ -498,7 +469,6 @@ async function syncToServer() {
 
   syncState.inFlight = true;
   setSaveStatus('서버 동기화 중', 'soft');
-
   try {
     const payload = payloadForExport();
     const { error } = await supabaseClient.from('walk_sessions').upsert({
@@ -516,7 +486,6 @@ async function syncToServer() {
       source: 'trailtrip-web',
       updated_at: new Date().toISOString()
     });
-
     if (error) throw error;
 
     syncState.lastSyncedAt = new Date().toISOString();
@@ -547,14 +516,7 @@ function scheduleSync() {
 function onPosition(position) {
   const { latitude, longitude, speed, accuracy } = position.coords;
   gpsStatus.textContent = `GPS 수신 (${Math.round(accuracy)}m)`;
-
-  const point = {
-    lat: latitude,
-    lng: longitude,
-    ts: position.timestamp,
-    accuracy: accuracy || 0
-  };
-
+  const point = { lat: latitude, lng: longitude, ts: position.timestamp, accuracy: accuracy || 0 };
   latestPosition = point;
 
   if (!selectedSpotCoords) {
@@ -567,7 +529,6 @@ function onPosition(position) {
     const segment = haversineMeters(prev.lat, prev.lng, point.lat, point.lng);
     if (segment >= 3 && segment <= 120) totalDistanceMeters += segment;
   }
-
   path.push(point);
 
   if (typeof speed === 'number' && !Number.isNaN(speed) && speed >= 0) {
@@ -596,19 +557,16 @@ function startTracking() {
     alert('이 브라우저는 위치 추적을 지원하지 않습니다.');
     return;
   }
-
   if (!mapReady) {
     alert('지도가 아직 준비되지 않았습니다. 카카오맵 로딩을 먼저 확인해 주세요.');
     return;
   }
-
   if (!startedAt || endedAt) {
     startedAt = Date.now();
     endedAt = null;
     totalDistanceMeters = 0;
     latestSpeedKmh = 0;
     path = [];
-
     queueMapOp(() => {
       if (walkedPathPolyline) walkedPathPolyline.setMap(null);
       walkedPathPolyline = null;
@@ -617,7 +575,6 @@ function startTracking() {
 
   updateStats();
   updateTimer();
-
   if (timerId) clearInterval(timerId);
   timerId = setInterval(updateTimer, 1000);
 
@@ -636,10 +593,8 @@ function startTracking() {
 function stopTracking() {
   if (watchId) navigator.geolocation.clearWatch(watchId);
   watchId = null;
-
   if (timerId) clearInterval(timerId);
   timerId = null;
-
   endedAt = Date.now();
   isTracking = false;
   startBtn.textContent = '로그 재개';
@@ -655,16 +610,16 @@ function parseGpx(text) {
 
   const trkpts = [...xml.querySelectorAll('trkpt')];
   const rtepts = [...xml.querySelectorAll('rtept')];
-  const pts = (trkpts.length ? trkpts : rtepts)
-    .map((node) => [Number(node.getAttribute('lat')), Number(node.getAttribute('lon'))])
-    .filter(([lat, lon]) => Number.isFinite(lat) && Number.isFinite(lon));
+  const pts = (trkpts.length ? trkpts : rtepts).map((node) => [
+    Number(node.getAttribute('lat')),
+    Number(node.getAttribute('lon'))
+  ]).filter(([lat, lon]) => Number.isFinite(lat) && Number.isFinite(lon));
 
   if (pts.length < 2) throw new Error('GPX 안에 경로 좌표가 부족합니다.');
 
   const nameNode = xml.querySelector('trk > name, rte > name');
   const name = nameNode?.textContent?.trim() || '업로드한 GPX 경로';
   const distanceKm = polylineDistanceKm(pts);
-
   const checkpointIndexes = [0, Math.floor(pts.length * 0.25), Math.floor(pts.length * 0.5), Math.floor(pts.length * 0.75), pts.length - 1]
     .filter((value, index, arr) => arr.indexOf(value) === index)
     .sort((a, b) => a - b);
@@ -679,12 +634,7 @@ function parseGpx(text) {
   }));
 
   return {
-    meta: {
-      name,
-      distanceKm,
-      durationHours: Number((distanceKm / 3.8).toFixed(1)),
-      note: '사용자가 업로드한 GPX 경로'
-    },
+    meta: { name, distanceKm, durationHours: Number((distanceKm / 3.8).toFixed(1)), note: '사용자가 업로드한 GPX 경로' },
     checkpoints,
     polyline: pts
   };
@@ -692,10 +642,7 @@ function parseGpx(text) {
 
 function buildGpxFromPath(points, trackName) {
   const safeName = trackName || 'TrailTrip Walk Log';
-  const trkpts = points
-    .map((p) => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts).toISOString()}</time></trkpt>`)
-    .join('\n');
-
+  const trkpts = points.map((p) => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts).toISOString()}</time></trkpt>`).join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="TrailTrip MVP" xmlns="http://www.topografix.com/GPX/1/1">\n  <trk>\n    <name>${safeName}</name>\n    <trkseg>\n${trkpts}\n    </trkseg>\n  </trk>\n</gpx>`;
 }
 
@@ -741,15 +688,12 @@ function loadKakaoMapSdk() {
 async function bootMap() {
   try {
     await loadKakaoMapSdk();
-
     kakao.maps.load(() => {
       const first = activeRoute.polyline[0] || [33.4867, 126.3978];
-
       map = new kakao.maps.Map(document.getElementById('map'), {
         center: latLng(first[0], first[1]),
         level: 8
       });
-
       mapReady = true;
       setMapNotice('');
       renderRoute(activeRoute, routeSourceBadge.textContent || '기본 데모 경로');
@@ -764,177 +708,122 @@ async function bootMap() {
   }
 }
 
-function acquireCurrentLocationAndCenter() {
-  if (!navigator.geolocation) {
-    alert('이 브라우저는 위치 확인을 지원하지 않습니다.');
-    return;
-  }
-
-  gpsStatus.textContent = '현재 위치 확인 중';
-
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      const point = {
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-        ts: position.timestamp || Date.now(),
-        accuracy: position.coords.accuracy || 0
-      };
-
-      latestPosition = point;
-
-      if (!selectedSpotCoords) {
-        selectedSpotCoords = { lat: point.lat, lng: point.lng };
-        updateSelectedCoordsPreview();
-      }
-
-      updateCurrentMarker(point, point.accuracy);
-      smoothPanTo(point, true);
-
-      gpsStatus.textContent = `현재 위치 확인 (${Math.round(point.accuracy || 0)}m)`;
-      persistDraft('현재 위치 갱신됨', false);
-    },
-    (error) => {
-      gpsStatus.textContent = '위치 확인 실패';
-      alert(`현재 위치를 가져오지 못했습니다. ${error.message}`);
-    },
-    {
-      enableHighAccuracy: true,
-      maximumAge: 0,
-      timeout: 12000
-    }
-  );
-}
-
-function wireSafeTap(element, handler) {
-  if (!element) return;
-
-  let lastTouchTs = 0;
-
-  element.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    lastTouchTs = Date.now();
-    handler(e);
-  }, { passive: false });
-
-  element.addEventListener('click', (e) => {
-    if (Date.now() - lastTouchTs < 500) return;
-    e.preventDefault();
-    e.stopPropagation();
-    handler(e);
-  });
-}
-
-wireSafeTap(startBtn, () => {
+startBtn.addEventListener('click', () => {
   if (watchId) stopTracking();
   else startTracking();
 });
 
-wireSafeTap(quickPhotoTabBtn, () => switchTab('record'));
-wireSafeTap(quickSpotTabBtn, () => switchTab('spots'));
-
-wireSafeTap(centerMapBtn, () => {
-  if (latestPosition) smoothPanTo(latestPosition, true);
-  else acquireCurrentLocationAndCenter();
-});
-
-wireSafeTap(useCurrentLocationBtn, () => {
-  if (latestPosition) {
-    selectedSpotCoords = { lat: latestPosition.lat, lng: latestPosition.lng };
-    updateSelectedCoordsPreview();
-    persistDraft('현재 위치 반영됨', false);
-    switchTab('record');
-  } else {
-    acquireCurrentLocationAndCenter();
-    setTimeout(() => {
-      if (latestPosition) {
-        selectedSpotCoords = { lat: latestPosition.lat, lng: latestPosition.lng };
-        updateSelectedCoordsPreview();
-        persistDraft('현재 위치 반영됨', false);
-        switchTab('record');
-      }
-    }, 1200);
-  }
-});
-
-wireSafeTap(downloadLogBtn, () => {
-  downloadTextFile(
-    'trailtrip-hagwi-hyeopjae-log.json',
-    JSON.stringify(payloadForExport(), null, 2),
-    'application/json'
-  );
+downloadLogBtn.addEventListener('click', () => {
+  downloadTextFile('trailtrip-hagwi-hyeopjae-log.json', JSON.stringify(payloadForExport(), null, 2), 'application/json');
   persistDraft('JSON 저장 완료', false);
 });
 
-wireSafeTap(exportGpxBtn, () => {
+exportGpxBtn.addEventListener('click', () => {
   if (path.length < 2) {
     alert('GPX로 저장하려면 먼저 실제로 조금 걸어서 GPS 로그를 쌓아야 합니다.');
     return;
   }
-
   const gpx = buildGpxFromPath(path, activeRoute.meta.name);
   downloadTextFile('trailtrip-walk-log.gpx', gpx, 'application/gpx+xml');
   persistDraft('GPX 저장 완료', false);
 });
 
-if (gpxFileInput) {
-  gpxFileInput.addEventListener('change', async (event) => {
-    const [file] = event.target.files || [];
-    if (!file) return;
+gpxFileInput.addEventListener('change', async (event) => {
+  const [file] = event.target.files || [];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const uploadedRoute = parseGpx(text);
+    renderRoute(uploadedRoute, `업로드 경로: ${file.name}`);
+    persistDraft('GPX 경로 반영됨');
+    alert(`GPX 업로드 완료: ${uploadedRoute.meta.name} / ${uploadedRoute.meta.distanceKm.toFixed(1)}km`);
+  } catch (error) {
+    alert(error.message || 'GPX 업로드에 실패했습니다.');
+  }
+});
 
-    try {
-      const text = await file.text();
-      const uploadedRoute = parseGpx(text);
-      renderRoute(uploadedRoute, `업로드 경로: ${file.name}`);
-      persistDraft('GPX 경로 반영됨');
-      alert(`GPX 업로드 완료: ${uploadedRoute.meta.name} / ${uploadedRoute.meta.distanceKm.toFixed(1)}km`);
-    } catch (error) {
-      alert(error.message || 'GPX 업로드에 실패했습니다.');
-    }
-  });
-}
-
-wireSafeTap(resetRouteBtn, () => {
+resetRouteBtn.addEventListener('click', () => {
   renderRoute(structuredClone(defaultRoute), '기본 데모 경로');
-  if (gpxFileInput) gpxFileInput.value = '';
+  gpxFileInput.value = '';
   persistDraft('기본 경로 복원');
 });
 
-if (spotPhotoInput) {
-  spotPhotoInput.addEventListener('change', async (event) => {
-    const [file] = event.target.files || [];
-    if (!file) {
-      selectedPhotoDataUrl = '';
-      clearSpotForm();
-      return;
+spotPhotoInput.addEventListener('change', async (event) => {
+  const [file] = event.target.files || [];
+  if (!file) {
+    selectedPhotoDataUrl = '';
+    clearSpotForm();
+    return;
+  }
+  const dataUrl = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('사진 읽기에 실패했습니다.'));
+    reader.readAsDataURL(file);
+  });
+  selectedPhotoDataUrl = String(dataUrl);
+  spotPhotoPreview.className = 'spot-photo-preview';
+  spotPhotoPreview.innerHTML = `<img src="${selectedPhotoDataUrl}" alt="현장 사진 미리보기" />`;
+  persistDraft('사진 임시저장됨');
+});
+
+useCurrentLocationBtn.addEventListener('click', () => {
+  if (!latestPosition) {
+    acquireCurrentLocationAndCenter();
+    if (!latestPosition) return;
+  }
+  selectedSpotCoords = { lat: latestPosition.lat, lng: latestPosition.lng };
+  updateSelectedCoordsPreview();
+  persistDraft('현재 위치 반영됨', false);
+  switchTab('record');
+});
+
+function acquireCurrentLocationAndCenter() {
+  if (!navigator.geolocation) {
+    alert('이 브라우저는 위치 확인을 지원하지 않습니다.');
+    return;
+  }
+  gpsStatus.textContent = '현재 위치 확인 중';
+  navigator.geolocation.getCurrentPosition((position) => {
+    const point = {
+      lat: position.coords.latitude,
+      lng: position.coords.longitude,
+      ts: position.timestamp || Date.now(),
+      accuracy: position.coords.accuracy || 0
+    };
+    latestPosition = point;
+    if (!selectedSpotCoords) {
+      selectedSpotCoords = { lat: point.lat, lng: point.lng };
+      updateSelectedCoordsPreview();
     }
-
-    const dataUrl = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = () => reject(new Error('사진 읽기에 실패했습니다.'));
-      reader.readAsDataURL(file);
-    });
-
-    selectedPhotoDataUrl = String(dataUrl);
-    spotPhotoPreview.className = 'spot-photo-preview';
-    spotPhotoPreview.innerHTML = `<img src="${selectedPhotoDataUrl}" alt="현장 사진 미리보기" />`;
-    persistDraft('사진 임시저장됨');
+    updateCurrentMarker(point, point.accuracy);
+    smoothPanTo(point, true);
+    gpsStatus.textContent = `현재 위치 확인 (${Math.round(point.accuracy || 0)}m)`;
+    persistDraft('현재 위치 갱신됨', false);
+  }, (error) => {
+    gpsStatus.textContent = '위치 확인 실패';
+    alert(`현재 위치를 가져오지 못했습니다. ${error.message}`);
+  }, {
+    enableHighAccuracy: true,
+    maximumAge: 0,
+    timeout: 10000
   });
 }
 
-wireSafeTap(addSpotBtn, () => {
+centerMapBtn.addEventListener('click', () => {
+  if (latestPosition) smoothPanTo(latestPosition, true);
+  else acquireCurrentLocationAndCenter();
+});
+
+addSpotBtn.addEventListener('click', () => {
   if (!spotTitle.value.trim()) {
     alert('포인트 이름을 적어주세요.');
     return;
   }
-
   if (!selectedSpotCoords) {
     alert('포인트 좌표가 없습니다. 현재 위치를 먼저 넣어주세요.');
     return;
   }
-
   const record = {
     id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
     category: spotCategory.value,
@@ -945,7 +834,6 @@ wireSafeTap(addSpotBtn, () => {
     createdAt: new Date().toISOString(),
     photoDataUrl: selectedPhotoDataUrl || ''
   };
-
   spotRecords.unshift(record);
   renderSpotRecords();
   clearSpotForm();
@@ -953,30 +841,27 @@ wireSafeTap(addSpotBtn, () => {
   switchTab('spots');
 });
 
-if (spotRecordList) {
-  spotRecordList.addEventListener('click', (event) => {
-    const btn = event.target.closest('[data-record-id]');
-    if (!btn) return;
+spotRecordList.addEventListener('click', (event) => {
+  const btn = event.target.closest('[data-record-id]');
+  if (!btn) return;
+  const { recordId } = btn.dataset;
+  spotRecords = spotRecords.filter((record) => record.id !== recordId);
+  renderSpotRecords();
+  persistDraft('포인트 삭제 반영됨');
+});
 
-    const { recordId } = btn.dataset;
-    spotRecords = spotRecords.filter((record) => record.id !== recordId);
-    renderSpotRecords();
-    persistDraft('포인트 삭제 반영됨');
-  });
-}
+fieldNotes.addEventListener('input', () => persistDraft('메모 저장됨'));
+spotTitle.addEventListener('input', () => persistDraft('입력 임시저장됨', false));
+spotDescription.addEventListener('input', () => persistDraft('입력 임시저장됨', false));
+spotCategory.addEventListener('change', () => persistDraft('구분 저장됨', false));
 
-if (fieldNotes) fieldNotes.addEventListener('input', () => persistDraft('메모 저장됨'));
-if (spotTitle) spotTitle.addEventListener('input', () => persistDraft('입력 임시저장됨', false));
-if (spotDescription) spotDescription.addEventListener('input', () => persistDraft('입력 임시저장됨', false));
-if (spotCategory) spotCategory.addEventListener('change', () => persistDraft('구분 저장됨', false));
-
-wireSafeTap(scrollToMapBtn, () => {
+scrollToMapBtn.addEventListener('click', () => {
   switchTab('map');
   if (latestPosition) smoothPanTo(latestPosition, true);
   else if (routeBounds && map) map.setBounds(routeBounds, 30, 30, 30, 30);
 });
 
-wireSafeTap(syncNowBtn, async () => {
+syncNowBtn.addEventListener('click', async () => {
   persistDraft('동기화 준비 중', false);
   const ok = await syncToServer();
   if (!ok && !supabaseClient) {
@@ -984,20 +869,16 @@ wireSafeTap(syncNowBtn, async () => {
   }
 });
 
-wireSafeTap(newSessionBtn, () => {
+newSessionBtn.addEventListener('click', () => {
   const confirmed = confirm('현재 기록을 비우고 새 답사를 시작할까요? 로컬 임시저장도 함께 삭제됩니다.');
   if (confirmed) clearCurrentSession();
 });
 
 window.addEventListener('beforeunload', () => persistDraft('종료 전 저장됨', false));
-
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) persistDraft('백그라운드 저장됨', false);
 });
-
-window.addEventListener('online', () => {
-  if (supabaseClient) syncToServer();
-});
+window.addEventListener('online', () => { if (supabaseClient) syncToServer(); });
 
 renderRoute(activeRoute, '기본 데모 경로');
 updateSelectedCoordsPreview();

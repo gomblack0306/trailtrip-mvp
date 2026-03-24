@@ -1,24 +1,5 @@
 <!DOCTYPE html>
 <html lang="ko">
-<script src="config.js"></script>
-<script>
-  (function loadKakaoMapSdk() {
-    const config = window.TRAILTRIP_CONFIG || {};
-    const kakaoKey = config.kakaoJavascriptKey;
-    if (!kakaoKey) {
-      console.error('카카오 JavaScript 키가 비어 있습니다.');
-      return;
-    }
-    const existing = document.querySelector('script[data-kakao-sdk="true"]');
-    if (existing) return;
-
-    const script = document.createElement('script');
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(kakaoKey)}&autoload=false`;
-    script.async = true;
-    script.dataset.kakaoSdk = 'true';
-    document.head.appendChild(script);
-  })();
-</script>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -63,15 +44,14 @@
             </div>
 
             <div class="map-fab-stack">
-              <button id="centerMapBtn" class="fab-btn" type="button" title="내 위치로 이동">◎</button>
-              <button id="useCurrentLocationBtn" class="fab-btn" type="button" title="현재 위치를 포인트 좌표에 입력">＋</button>
+              <button id="centerMapBtn" class="fab-btn" type="button" title="내 위치로 이동">📍</button>
+              <button id="useCurrentLocationBtn" class="fab-btn" type="button" title="현재 위치를 포인트 좌표에 입력">✚</button>
             </div>
 
-            <div class="bottom-action-dock">
-              <button id="startBtn" class="primary-btn dock-primary">로그 시작</button>
-              <button id="quickPhotoTabBtn" class="secondary-btn dock-btn" type="button">기록</button>
-              <button id="quickSpotTabBtn" class="secondary-btn dock-btn" type="button">포인트</button>
-            </div>
+          </div>
+
+          <div class="main-action">
+            <button id="startBtn" class="primary-btn full-btn" type="button">로그 시작</button>
           </div>
 
           <div class="mini-actions mini-actions-three">
@@ -99,6 +79,7 @@
               <span>구분</span>
               <select id="spotCategory">
                 <option value="자연경관">자연경관</option>
+                <option value="CP">CP</option>
                 <option value="식당">식당</option>
                 <option value="카페">카페</option>
                 <option value="편의점">편의점</option>
